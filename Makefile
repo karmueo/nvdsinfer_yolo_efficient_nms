@@ -32,7 +32,14 @@ CFLAGS+= -shared -fPIC
 CFLAGS+= -I/opt/nvidia/deepstream/deepstream/sources/includes \
          -I /usr/local/cuda-$(CUDA_VER)/include
 
-LIBS:= -lnvinfer -lnvparsers
+CUDA_MAJOR_VER := $(shell echo $(CUDA_VER) | cut -d. -f1)
+CUDA_MINOR_VER := $(shell echo $(CUDA_VER) | cut -d. -f2)
+
+ifeq ($(shell [ $(CUDA_MAJOR_VER) -ge 12 ] && [ $(CUDA_MINOR_VER) -ge 2 ] && echo true), true)
+    LIBS := -lnvinfer
+else
+    LIBS := -lnvinfer -lnvparsers
+endif
 LFLAGS:= -Wl,--start-group $(LIBS) -Wl,--end-group
 
 SRCFILES:= nvdsinfer_yolo_efficient_nms.cpp 
@@ -44,7 +51,7 @@ $(TARGET_LIB) : $(SRCFILES)
 	$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 install: $(TARGET_LIB)
-	cp $(TARGET_LIB) ../../../lib
+	cp $(TARGET_LIB) /opt/nvidia/deepstream/deepstream/lib
 
 clean:
 	rm -rf $(TARGET_LIB)
